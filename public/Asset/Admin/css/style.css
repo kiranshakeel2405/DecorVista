@@ -1231,3 +1231,13 @@ h6 {
   font-size: 13px;
   color: #012970;
 }
+
+.dropzone {
+  background: white;
+  border-radius: 5px;
+  border: 2px dashed rgb(0, 135, 247);
+  border-image: none;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}

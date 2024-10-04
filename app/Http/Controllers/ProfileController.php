@@ -8,6 +8,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Validator;
+use App\Rules\Alpha;
+use App\Models\TempImage;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class ProfileController extends Controller
 {
@@ -24,17 +29,73 @@ class ProfileController extends Controller
     /**
      * Update the user's profile information.
      */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    public function update(ProfileUpdateRequest $request)
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        $validator = Validator::make($request->all(), [
+            'name' => [ 'required','min:3', new Alpha],
+            'email' => 'required|email|unique:users,email,' . $user->id . ',id',
+            'phone' => 'required|numeric|digits:11',
+        ]);
+
+        if($validator->passes()){
+            $user->name = $request->name;
+            $user->email = $request->email;
+            $user->contact = $request->phone;
+            $user->update();
+
+            if($request->image_id != ""){
+                $tempimginfo = TempImage::find($request->image_id);
+                $extArray = explode('.',$tempimginfo->image);
+                $ext = last($extArray);
+               
+    
+    
+                $ImageName = $user->id.'-'.'-'.time().'.'.$ext;
+                $user->image = $ImageName;
+                $user->save();;
+    
+    
+    
+                // Generate thumbnail
+    
+                //large
+                       $Spath = public_path().'/temp/'.$tempimginfo->image;
+                     
+                        $dpath = public_path().'/uploads/profile/large/'.$ImageName;
+                        $manager = new ImageManager(new Driver());
+                        $image = $manager->read($Spath);
+                        $image->scaleDown(1400);
+                        $image->save($dpath);
+                        
+    
+    
+    
+                        //small
+                        $dpath = public_path().'/uploads/profile/small/'.$ImageName;
+                        $image->cover(400,400);
+                        $image->save($dpath);
+            }
+
+
+            return response()->json([
+                'status' => true,
+                'msg' =>'Profile Updated SuccessFully',
+            ]);
+        }
+        else{
+
+            return response()->json([
+                'status' => false,
+                'errors' => $validator->errors(),
+            ]);
         }
 
-        $request->user()->save();
+      
+       
 
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+       
     }
 
     /**
@@ -55,6 +116,6 @@ class ProfileController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return Redirect::to('/');
+        return redirect()->route('Front.index');
     }
 }

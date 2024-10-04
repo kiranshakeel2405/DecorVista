@@ -1,0 +1,1 @@
+[22-Sep-2024 14:47:17 UTC] PHP Fatal error:  Cannot use App\Models\User as User because the name is already in use in /home2/cointra/public_html/techwiz5/app/Http/Controllers/DesignerController.php on line 7

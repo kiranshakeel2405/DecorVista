@@ -1,0 +1,48 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\TempImage;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
+
+class TempImageController extends Controller
+{
+    public function create(Request $request)
+    {
+         $image = $request->image;
+
+         if(!empty($image)){
+            $ext = $image->getClientOriginalExtension();
+           
+
+
+            $Temp = new TempImage();
+            $Temp->image = 'null';
+            $Temp->save();
+            
+            $ImgNew = $Temp->id.'-'.time().'.'.$ext;
+            $Temp->image = $ImgNew;
+            $Temp->save();
+            
+            $image->move(public_path().'/temp',$ImgNew);
+            
+            $manager = new ImageManager(new Driver());
+            $spath = public_path().'/temp/'.$ImgNew;
+            $dpath = public_path().'/temp/thumb/'.$ImgNew;
+            $image = $manager->read($spath);
+            $image->cover(300,275);
+            $image->save($dpath);
+            
+        
+
+            return response()->json([
+                'status' => true,
+                'Image_id' => $Temp->id, 
+                'Image_path' => asset('temp/thumb/'.$ImgNew) 
+            ]);
+
+         }
+    }
+}
